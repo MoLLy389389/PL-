@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PL$€</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg: #161616;
+    --bg2: #1d1d1d;
+    --line: #3a3a3a;
+    --line-dim: #2a2a2a;
+    --text: #cfcfcf;
+    --text-dim: #7a7a7a;
+    --accent: #e0a94b;
+    --accent2: #8fb3ff;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:#0a0a0a;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    color:var(--text);
+    padding:12px;
+  }
+
+  .plugin{
+    width:1100px; max-width:100%;
+    background:var(--bg);
+    border:1px solid var(--line);
+    display:flex; flex-direction:column;
+    user-select:none;
+    position:relative;
+  }
+
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+    letter-spacing:2px;
+  }
+  header .title{ font-size:20px; }
+  header .author{ font-size:14px; color:var(--text-dim); }
+
+  .body{
+    display:grid;
+    grid-template-columns:170px 1fr 170px;
+    min-height:440px;
+  }
+
+  .fader-col{
+    display:flex; flex-direction:column; align-items:center;
+    padding:18px 0;
+    border-right:1px solid var(--line);
+    gap:10px;
+    touch-action:none;
+  }
+  .fader-col.right{ border-right:none; border-left:1px solid var(--line); }
+
+  .fader-label{
+    font-size:10px; letter-spacing:1.5px; color:var(--text-dim);
+    writing-mode:vertical-rl; text-orientation:mixed;
+    margin-bottom:4px;
+  }
+
+  .fader-track{
+    position:relative;
+    width:4px; flex:1;
+    background:var(--line-dim);
+    cursor:pointer;
+  }
+  .fader-fill{
+    position:absolute; bottom:0; left:0; width:100%;
+    background:var(--line);
+  }
+  .fader-handle{
+    position:absolute; left:50%; transform:translate(-50%, 50%);
+    width:22px; height:10px;
+    background:var(--text);
+    border:1px solid #0a0a0a;
+  }
+  .fader-value{ font-size:11px; color:var(--text-dim); }
+
+  .effects-panel{
+    padding:18px 16px;
+    border-right:1px solid var(--line);
+  }
+  .panel-title{
+    font-size:13px; letter-spacing:1.5px;
+    padding-bottom:10px; margin-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .effects-list{
+    list-style:none; margin:0; padding:0;
+    display:flex; flex-direction:column;
+  }
+  .effects-list li{
+    display:flex; align-items:center; gap:10px;
+    padding:7px 6px;
+    font-size:14px;
+    cursor:grab;
+    border:1px solid transparent;
+    touch-action:none;
+  }
+  .effects-list li:hover{ border-color:var(--line); }
+  .effects-list li.selected{
+    border-color:var(--text-dim);
+    background:var(--bg2);
+  }
+  .effects-list li.source-dragging{ opacity:0.3; }
+  .effects-list .icon{ width:20px; text-align:center; font-size:14px; }
+  .effects-list li[data-effect="420"] span.label{ color:var(--accent); }
+
+  .center-panel{
+    padding:18px 20px;
+    display:flex; flex-direction:column;
+    border-right:1px solid var(--line);
+  }
+  .analyzer{
+    text-align:center; color:var(--text-dim);
+    font-size:14px; letter-spacing:1px;
+    padding:14px 0 22px;
+    border-bottom:1px dashed var(--line-dim);
+    margin-bottom:20px;
+  }
+  .current-effect-name{
+    font-size:11px; color:var(--text-dim); letter-spacing:1.5px;
+    margin-bottom:16px;
+  }
+  .strength-row{
+    margin-bottom:24px;
+    padding-bottom:20px;
+    border-bottom:1px dashed var(--line-dim);
+  }
+  .strength-row .param-top .plabel{ font-size:13px; letter-spacing:0.5px; }
+  .strength-row .slider-handle{ background:var(--accent2); }
+  .strength-row .slider-fill{ background:#3a4a5e; }
+
+  .params-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:18px 36px;
+  }
+  .param{ touch-action:none; }
+  .param-top{
+    display:flex; justify-content:space-between;
+    font-size:12px; margin-bottom:6px;
+  }
+  .param-top .plabel.static{ color:var(--accent2); }
+  .param-top .pval{ color:var(--text-dim); }
+  .slider-track{
+    position:relative;
+    height:4px;
+    background:var(--line-dim);
+    cursor:pointer;
+  }
+  .slider-fill{
+    position:absolute; top:0; left:0; height:100%;
+    background:var(--line);
+  }
+  .slider-handle{
+    position:absolute; top:50%; transform:translate(-50%, -50%);
+    width:10px; height:22px;
+    background:var(--text);
+    border:1px solid #0a0a0a;
+  }
+
+  .chain-panel{
+    padding:18px 14px;
+    display:flex; flex-direction:column;
+  }
+  .chain-list{
+    list-style:none; margin:0; padding:0;
+    display:flex; flex-direction:column; gap:6px;
+    flex:1;
+    min-height:220px;
+  }
+  .chain-list.dropzone-active{ background:var(--bg2); }
+  .chain-item{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 8px;
+    border:1px solid var(--line);
+    font-size:12px;
+    cursor:grab;
+    touch-action:none;
+    background:var(--bg);
+  }
+  .chain-item.source-dragging{ opacity:0.3; }
+  .chain-item .x{
+    margin-left:auto; color:var(--text-dim); cursor:pointer;
+    padding:0 4px;
+  }
+  .chain-item .x:hover{ color:var(--accent); }
+  .chain-hint{
+    font-size:10px; color:var(--text-dim); text-align:center;
+    padding-top:10px; letter-spacing:0.5px;
+  }
+  .chain-item.insert-before{ border-top:2px solid var(--accent2); }
+  .chain-item.insert-after{ border-bottom:2px solid var(--accent2); }
+
+  footer{
+    display:flex; align-items:center; gap:30px;
+    padding:12px 20px;
+    border-top:1px solid var(--line);
+    font-size:13px;
+    flex-wrap:wrap;
+  }
+  footer .cpu-val{ color:var(--accent); }
+  .footer-controls{ margin-left:auto; display:flex; align-items:center; gap:24px; }
+  .dw-control{
+    display:flex; flex-direction:column; align-items:center;
+    gap:4px;
+  }
+  .dw-value{ font-size:11px; color:var(--text-dim); }
+  .dw-row{ display:flex; align-items:center; gap:10px; touch-action:none; }
+  .dw-side{ font-size:11px; letter-spacing:1px; color:var(--text-dim); }
+  .dw-track{ width:140px; }
+
+  .ghost{
+    position:fixed; z-index:999; pointer-events:none;
+    padding:6px 10px; font-size:12px;
+    background:var(--bg2); border:1px solid var(--text-dim);
+    display:flex; align-items:center; gap:8px;
+    transform:translate(-50%,-50%);
+    opacity:0.9;
+  }
+
+  @media (max-width:820px){
+    .plugin{ width:100%; }
+    .body{
+      grid-template-columns:1fr;
+      grid-template-rows:auto auto auto auto auto;
+    }
+    .fader-col{
+      flex-direction:row; border-right:none; border-bottom:1px solid var(--line);
+      padding:14px 20px; gap:16px;
+    }
+    .fader-col.right{ border-left:none; }
+    .fader-label{ writing-mode:horizontal-tb; }
+    .fader-track{ width:auto; flex:1; height:4px; }
+    .fader-fill{ height:100%; width:0; bottom:auto; }
+    .fader-handle{ left:0; top:50%; transform:translate(-50%,-50%); width:10px; height:22px; }
+    .effects-panel, .chain-panel{ border-right:none; border-bottom:1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+
+<div class="plugin" id="pluginRoot">
+  <header>
+    <span class="title">PL$€</span>
+    <span class="author">BB.SALLY</span>
+  </header>
+
+  <div class="body">
+    <div class="effects-panel">
+      <div class="panel-title">EFFECTS</div>
+      <ul class="effects-list" id="effectsList"></ul>
+    </div>
+
+    <div class="center-panel">
+      <div class="analyzer">(Spectrum Analyzer)</div>
+      <div class="current-effect-name" id="currentEffectName">REVERB</div>
+      <div class="strength-row" id="strengthRow"></div>
+      <div class="params-grid" id="paramsGrid"></div>
+    </div>
+
+    <div class="chain-panel">
+      <div class="panel-title">SIGNAL CHAIN</div>
+      <ul class="chain-list" id="chainList"></ul>
+      <div class="chain-hint">przeciągnij efekt tutaj</div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Preset: <span style="color:var(--accent)">Heaven 2014</span></span>
+    <span>CPU <span class="cpu-val" id="cpuVal">3.2</span>%</span>
+    <div class="footer-controls">
+      <div class="dw-control">
+        <div class="dw-value" id="valSensitivity">50%</div>
+        <div class="dw-row">
+          <span class="dw-side">SENS</span>
+          <div class="slider-track dw-track" id="faderSensitivity">
+            <div class="slider-fill" id="fillSensitivity"></div>
+            <div class="slider-handle" id="handleSensitivity"></div>
+          </div>
+        </div>
+      </div>
+      <div class="dw-control">
+        <div class="dw-value" id="valWet">50%</div>
+        <div class="dw-row">
+          <span class="dw-side">GAIN</span>
+          <div class="slider-track dw-track" id="faderWet">
+            <div class="slider-fill" id="fillWet"></div>
+            <div class="slider-handle" id="handleWet"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+const EFFECTS = [
+  { id:'reverb',   label:'Reverb',   icon:'🔮', params:['Size','Time','Width','Tone','Feedback','Drive','Stereo'] },
+  { id:'delay',    label:'Delay',    icon:'🌊', params:['Time','Feedback','Width','Tone','Drive','Stereo','Spread'] },
+  { id:'lsd',      label:'LSD',      icon:'💊', params:['Depth','Rate','Width','Drive','Tone','Wobble','Chaos'] },
+  { id:'420',      label:'420',      icon:'🌿', params:['Haze','Slow','Depth','Warmth','Drift','Fuzz','Mellow'] },
+  { id:'vhs',      label:'VHS',      icon:'📼', params:['Wear','Wow','Flutter','Noise','Saturation','Tracking','Age'] },
+  { id:'cloud',    label:'Cloud',    icon:'☁️', params:['Density','Size','Shimmer','Width','Diffuse','Glow','Softness'] },
+  { id:'angel',    label:'Angel',    icon:'👼', params:['Shimmer','Choir','Width','Brightness','Reverb','Air','Purity'] },
+  { id:'hyperpop', label:'Hyperpop', icon:'⚡', params:['Pitch','Distort','Bitcrush','Speed','Glitch','Squeal','Energy'] },
+  { id:'reverse',  label:'Reverse',  icon:'↩️', params:['Length','Fade','Smooth','Predelay','Width','Tone','Depth'] },
+  { id:'glitch',   label:'Glitch',   icon:'💥', params:['Rate','Chaos','Stutter','Repeat','Crush','Jitter','Chance'] },
+];
+
+const effectsList = document.getElementById('effectsList');
+const paramsGrid = document.getElementById('paramsGrid');
+const dryWetRow = document.getElementById('strengthRow');
+const chainList = document.getElementById('chainList');
+
+let selectedEffect = EFFECTS[0].id;
+const paramState = {}; // effectId -> {paramName: value}
+const dryWetState = {}; // effectId -> per-effect dry/wet blend
+
+EFFECTS.forEach(fx=>{
+  const li = document.createElement('li');
+  li.dataset.effect = fx.id;
+  li.innerHTML = `<span class="icon">${fx.icon}</span><span class="label">${fx.label}</span>`;
+  li.addEventListener('click', ()=> selectEffect(fx.id));
+  makeLibraryItemDraggable(li, fx);
+  effectsList.appendChild(li);
+});
+
+function selectEffect(id){
+  selectedEffect = id;
+  document.querySelectorAll('.effects-list li').forEach(li=>{
+    li.classList.toggle('selected', li.dataset.effect === id);
+  });
+  const fx = EFFECTS.find(f=>f.id===id);
+  document.getElementById('currentEffectName').textContent = fx.label.toUpperCase();
+  renderParams(fx);
+}
+
+function renderParams(fx){
+  if(!paramState[fx.id]){
+    paramState[fx.id] = {};
+    fx.params.forEach(p => paramState[fx.id][p] = 50);
+  }
+  if(dryWetState[fx.id] === undefined) dryWetState[fx.id] = 50;
+
+  // prominent per-effect Dry/Wet blend
+  dryWetRow.innerHTML = '';
+  dryWetRow.appendChild(buildSlider('Dry/Wet', dryWetState[fx.id], true, v=>{
+    dryWetState[fx.id] = v;
+  }));
+
+  paramsGrid.innerHTML = '';
+  fx.params.forEach(name=>{
+    paramsGrid.appendChild(buildSlider(name, paramState[fx.id][name], false, v=>{
+      paramState[fx.id][name] = v;
+    }));
+  });
+}
+
+function buildSlider(label, value, isStatic, onChange){
+  const wrap = document.createElement('div');
+  wrap.className = 'param';
+  wrap.innerHTML = `
+    <div class="param-top">
+      <span class="plabel${isStatic ? ' static' : ''}">${label}</span>
+      <span class="pval">${Math.round(value)}</span>
+    </div>
+    <div class="slider-track">
+      <div class="slider-fill"></div>
+      <div class="slider-handle"></div>
+    </div>`;
+  const track = wrap.querySelector('.slider-track');
+  const fill = wrap.querySelector('.slider-fill');
+  const handle = wrap.querySelector('.slider-handle');
+  const valEl = wrap.querySelector('.pval');
+
+  function render(v){
+    fill.style.width = v + '%';
+    handle.style.left = v + '%';
+    valEl.textContent = Math.round(v);
+  }
+  render(value);
+
+  function setFromClientX(clientX){
+    const rect = track.getBoundingClientRect();
+    let pct = ((clientX - rect.left) / rect.width) * 100;
+    pct = Math.min(100, Math.max(0, pct));
+    render(pct);
+    onChange(pct);
+  }
+
+  track.addEventListener('pointerdown', e=>{
+    track.setPointerCapture(e.pointerId);
+    setFromClientX(e.clientX);
+    const move = ev=> setFromClientX(ev.clientX);
+    const up = ()=>{
+      track.removeEventListener('pointermove', move);
+      track.removeEventListener('pointerup', up);
+    };
+    track.addEventListener('pointermove', move);
+    track.addEventListener('pointerup', up);
+  });
+
+  return wrap;
+}
+
+selectEffect(selectedEffect);
+document.querySelector(`.effects-list li[data-effect="${selectedEffect}"]`).classList.add('selected');
+
+// ---------- touch-friendly drag & drop ----------
+
+let ghostEl = null;
+function createGhost(html, x, y){
+  ghostEl = document.createElement('div');
+  ghostEl.className = 'ghost';
+  ghostEl.innerHTML = html;
+  ghostEl.style.left = x + 'px';
+  ghostEl.style.top = y + 'px';
+  document.body.appendChild(ghostEl);
+}
+function moveGhost(x, y){
+  if(ghostEl){ ghostEl.style.left = x + 'px'; ghostEl.style.top = y + 'px'; }
+}
+function removeGhost(){
+  if(ghostEl){ ghostEl.remove(); ghostEl = null; }
+}
+
+function clearInsertMarkers(){
+  chainList.querySelectorAll('.chain-item').forEach(li=>{
+    li.classList.remove('insert-before','insert-after');
+  });
+}
+
+function getInsertTarget(clientY){
+  const items = Array.from(chainList.querySelectorAll('.chain-item'));
+  for(const item of items){
+    const rect = item.getBoundingClientRect();
+    const mid = rect.top + rect.height/2;
+    if(clientY < mid) return { item, before:true };
+  }
+  return { item: items[items.length-1] || null, before:false };
+}
+
+// dragging a fresh effect from the library list onto the chain
+function makeLibraryItemDraggable(li, fx){
+  let dragging = false;
+  let startX, startY;
+
+  li.addEventListener('pointerdown', e=>{
+    startX = e.clientX; startY = e.clientY;
+    dragging = false;
+    const pid = e.pointerId;
+
+    function onMove(ev){
+      if(!dragging){
+        if(Math.abs(ev.clientX-startX) < 6 && Math.abs(ev.clientY-startY) < 6) return;
+        dragging = true;
+        li.classList.add('source-dragging');
+        createGhost(`<span>${fx.icon}</span><span>${fx.label}</span>`, ev.clientX, ev.clientY);
+      }
+      moveGhost(ev.clientX, ev.clientY);
+      const overChain = elementIsOverChain(ev.clientX, ev.clientY);
+      chainList.classList.toggle('dropzone-active', overChain);
+      clearInsertMarkers();
+      if(overChain){
+        const target = getInsertTarget(ev.clientY);
+        if(target.item) target.item.classList.add(target.before ? 'insert-before' : 'insert-after');
+      }
+    }
+    function onUp(ev){
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      li.classList.remove('source-dragging');
+      removeGhost();
+      chainList.classList.remove('dropzone-active');
+      const overChain = elementIsOverChain(ev.clientX, ev.clientY);
+      if(dragging && overChain){
+        const target = getInsertTarget(ev.clientY);
+        insertChainItem(fx, target);
+      }
+      clearInsertMarkers();
+      dragging = false;
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+}
+
+function elementIsOverChain(x, y){
+  const rect = chainList.getBoundingClientRect();
+  const pad = 20;
+  return x >= rect.left - pad && x <= rect.right + pad && y >= rect.top - pad && y <= rect.bottom + pad;
+}
+
+function insertChainItem(fx, target){
+  const li = document.createElement('li');
+  li.className = 'chain-item';
+  li.dataset.effect = fx.id;
+  li.innerHTML = `<span>${fx.icon}</span><span>${fx.label}</span><span class="x">×</span>`;
+  li.querySelector('.x').addEventListener('click', ()=> li.remove());
+  makeChainItemReorderable(li);
+
+  if(!target || !target.item){
+    chainList.appendChild(li);
+  } else if(target.before){
+    chainList.insertBefore(li, target.item);
+  } else {
+    chainList.insertBefore(li, target.item.nextSibling);
+  }
+}
+
+// reordering within the chain
+function makeChainItemReorderable(li){
+  let dragging = false;
+  let startX, startY;
+
+  li.addEventListener('pointerdown', e=>{
+    if(e.target.classList.contains('x')) return;
+    startX = e.clientX; startY = e.clientY;
+    dragging = false;
+
+    function onMove(ev){
+      if(!dragging){
+        if(Math.abs(ev.clientX-startX) < 6 && Math.abs(ev.clientY-startY) < 6) return;
+        dragging = true;
+        li.classList.add('source-dragging');
+        createGhost(li.innerHTML.replace('<span class="x">×</span>',''), ev.clientX, ev.clientY);
+      }
+      moveGhost(ev.clientX, ev.clientY);
+      clearInsertMarkers();
+      const target = getInsertTarget(ev.clientY);
+      if(target.item && target.item !== li) target.item.classList.add(target.before ? 'insert-before' : 'insert-after');
+    }
+    function onUp(ev){
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      li.classList.remove('source-dragging');
+      removeGhost();
+      clearInsertMarkers();
+      if(dragging){
+        const target = getInsertTarget(ev.clientY);
+        if(target.item && target.item !== li){
+          if(target.before) chainList.insertBefore(li, target.item);
+          else chainList.insertBefore(li, target.item.nextSibling);
+        } else if(!target.item){
+          chainList.appendChild(li);
+        }
+      }
+      dragging = false;
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+}
+
+// ---------- vertical / responsive faders ----------
+function setupFader(trackId, fillId, handleId, valId, onChange, alwaysHorizontal){
+  const track = document.getElementById(trackId);
+  const fill = document.getElementById(fillId);
+  const handle = document.getElementById(handleId);
+  const valEl = document.getElementById(valId);
+  let value = 50;
+
+  function isHorizontalLayout(){
+    return alwaysHorizontal || window.matchMedia('(max-width:820px)').matches;
+  }
+
+  function render(){
+    if(isHorizontalLayout()){
+      fill.style.width = value + '%';
+      handle.style.left = value + '%';
+    } else {
+      fill.style.height = value + '%';
+      handle.style.bottom = value + '%';
+    }
+    valEl.textContent = Math.round(value) + '%';
+    onChange && onChange(value);
+  }
+
+  function setFromClientPos(clientX, clientY){
+    const rect = track.getBoundingClientRect();
+    let pct;
+    if(isHorizontalLayout()){
+      pct = ((clientX - rect.left) / rect.width) * 100;
+    } else {
+      pct = ((rect.bottom - clientY) / rect.height) * 100;
+    }
+    pct = Math.min(100, Math.max(0, pct));
+    value = pct;
+    render();
+  }
+
+  track.addEventListener('pointerdown', e=>{
+    track.setPointerCapture(e.pointerId);
+    setFromClientPos(e.clientX, e.clientY);
+    const move = ev=> setFromClientPos(ev.clientX, ev.clientY);
+    const up = ()=>{
+      track.removeEventListener('pointermove', move);
+      track.removeEventListener('pointerup', up);
+    };
+    track.addEventListener('pointermove', move);
+    track.addEventListener('pointerup', up);
+  });
+
+  if(!alwaysHorizontal) window.addEventListener('resize', render);
+  render();
+}
+
+setupFader('faderSensitivity','fillSensitivity','handleSensitivity','valSensitivity', null, true);
+setupFader('faderWet','fillWet','handleWet','valWet', null, true);
+
+// fake cpu jitter, for flavor only
+setInterval(()=>{
+  const v = (2.5 + Math.random()*2).toFixed(1);
+  document.getElementById('cpuVal').textContent = v;
+}, 1800);
+</script>
+
+</body>
+</html>
