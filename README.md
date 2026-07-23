@@ -1,16 +1,15 @@
-
 # PL$€ - Plugin UI Mockup
 
-**To jest prywatny mockup interfejsu pluginu PL$€ by bB.sally**
+**This is a private UI mockup for the PL$€ plugin by bB.sally**
 
-### ⚠️ Ważne
-Ten projekt jest **chroniony prawem autorskim**. 
+### ⚠️ Important Notice
+This design, layout, color scheme, faders, signal chain and overall aesthetic is **copyright protected**.
 
-Kopiowanie, klonowanie lub używanie tego designu (układ, kolorystyka, styl surowego interfejsu, chain, faderów itp.) bez wyraźnej zgody autora jest **zabronione**.
+Copying, cloning, or using this UI (or any significant part of it) in your own project without explicit permission from the author is **strictly prohibited**.
 
-Każde nieautoryzowane wykorzystanie tego UI w komercyjnym lub publicznym projekcie będzie traktowane jako naruszenie praw autorskich i będzie karane zgodnie z prawem.
+Any unauthorized use will be treated as copyright infringement and will be pursued accordingly.
 
-Jeśli chcesz współpracować lub zainspirować się — napisz do mnie.
+If you want to collaborate or get inspired — feel free to reach out.
 
-© bB.sally 2026
+© bB.sally 2026  
 PL$€PL$€PL$€
